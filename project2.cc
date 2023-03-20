@@ -86,6 +86,8 @@ struct rule
     vector<string> RHS;
 };
 
+vector<rule> ruleSet;
+
 // read grammar
 void ReadGrammar()
 {
