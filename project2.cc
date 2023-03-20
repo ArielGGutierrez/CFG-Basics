@@ -12,6 +12,7 @@
 using namespace std;
 
 vector<string> lmaoSet;
+Lexer lexer;
 
 bool combine_sets(vector<string>* dstSet, vector<string>* srcSet) 
 {
@@ -87,10 +88,116 @@ struct rule
 };
 
 vector<rule> ruleSet;
+void expect(string token)
+{
+    Token t = lexer.peek(1);
+    if (token == t)
+    {
+        t = lexer.GetToken();
+    }
+    else
+    {
+        syntax_error();
+    }
+}
+
+void syntax_error()
+{
+    cout << "Syntax Error DUMMY";
+}
+
+void parse_grammar()
+{
+    parse_rule_list();
+    Token t = lexer.peek(1);
+    if (t.token_type == "HASH")
+    {
+        expect("HASH");
+        expect("END_OF_FILE");
+    }
+
+    else
+    {
+        syntax_error();
+    }
+}
+
+void parse_rule_list()
+
+{
+    parse_rule();
+
+    Token t = lexer.peek(1);
+    if (t.token_type == "ID")
+    {
+        parse_rule_list();
+    }
+}
+
+void parse_id_list()
+{
+    Token t = lexer.peek(1);
+    if (t.token_type == "ID")
+    {
+        expect("ID");
+
+        t = lexer.peek(1);
+        if (t.token_type == "ID")
+        {
+            parse_id_list();
+        }
+    }
+}
+
+void parse_rule()
+{
+    Token t = lexer.peek(1);
+    if (t.token_type == "ID")
+    {
+        expect("ID");
+        t = lexer.peek(1);
+        if (t.token_type == "ARROW")
+        {
+            expect("ARROW");
+            parse_rhs();
+            if (t.token_type == "STAR")
+            {
+                expect("STAR");
+            }
+            else
+            {
+                syntax_error();
+            }
+
+        }
+        else
+        {
+            syntax_error();
+        }
+    }
+    else
+    {
+        syntax_error();
+    }
+}
+
+void parse_rhs()
+{
+    Token t = lexer.peek(1);
+    if (t.token_type == "ID")
+    {
+        parse_id_list();
+    }
+    else if (t.token_type == "STAR")
+    {
+        return;
+    }
+}
 
 // read grammar
 void ReadGrammar()
 {
+    parse_grammar();
     cout << "0\n";
 }
 
