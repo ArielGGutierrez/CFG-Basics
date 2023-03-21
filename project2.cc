@@ -47,7 +47,7 @@ bool Project2::combine_sets(vector<string>* dstSet, vector<string>* srcSet)
     bool hasChanged = false;
     for (int i = 0; i < srcSet->size(); i++)
     {
-        if (srcSet->at(i).compare("#") != 0 && !str_is_in_set(dstSet), srcSet->at(i))
+        if (srcSet->at(i).compare("#") != 0 && !str_is_in_set(dstSet, srcSet->at(i)))
         {
             hasChanged = true;
             dstSet->insert(dstSet->end(),srcSet->at(i));
@@ -213,7 +213,7 @@ vector<string> Project2::get_nonterminals()
 {
     vector<string> nonterminals;
 
-    for (int i = 0; i < ruleSet.size; i++)
+    for (int i = 0; i < ruleSet.size(); i++)
     {
         nonterminals.insert(nonterminals.end(), ruleSet.at(i).LHS);
     }
@@ -239,7 +239,7 @@ vector<string> Project2::get_terminals(vector<string> nonterminals)
                 if (str.compare(nonterminals.at(k)) == 0)
                 {
                     isTerminal = false;
-                    break
+                    break;
                 }
             }
 
@@ -278,7 +278,7 @@ vector<string> Project2::get_universe(vector<string> terminals, vector<string> n
     return universe;
 }
 
-int* Project2::check_if_generate()
+bool* Project2::check_if_generate()
 {
     vector<string> nonterminals = get_nonterminals();
     vector<string> terminals    = get_terminals(nonterminals);
@@ -322,7 +322,7 @@ int* Project2::check_if_generate()
                 }
             }
             // If all terminals and nonterminals generate, then the rule generates
-            if (count == ruleSet.at(i).RHS.at(j).size())
+            if (count == ruleSet.at(i).RHS.size())
             {
                 generates[get_index(&universe, ruleSet.at(i).LHS)] = true;
                 changed = true;

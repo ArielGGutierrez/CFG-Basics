@@ -25,7 +25,7 @@ class Project2
 		std::vector<string> terminals;
 		std::vector<string> nonTerminals;
 
-		int get_index(vector<string>* universe, string str);
+		int  get_index(vector<string>* universe, string str);
 		bool str_is_in_set(vector<string>* srcSet, string str);
 		bool combine_sets(vector<string>* dstSet, vector<string>* srcSet);
 		bool is_epsilon_in(vector<string>* set);
@@ -45,7 +45,7 @@ class Project2
 		vector<string> get_terminals(vector<string> nonterminals);
 		vector<string> get_universe(vector<string> nonterminals, vector<string> terminals);
 
-		int* check_if_generate();
+		bool* check_if_generate();
 
 		void ReadGrammar();
 		void printTerminalsAndNoneTerminals();
@@ -54,3 +54,5 @@ class Project2
 		void CalculateFollowSets();
 		void CheckIfGrammarHasPredictiveParser();
 };
+
+#endif  //__PROJECT2__H__
