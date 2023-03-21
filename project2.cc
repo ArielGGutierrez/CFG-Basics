@@ -100,7 +100,7 @@ void Project2::print_set_in_order(vector<string>* set, vector<string>* order)
         }
     }
 
-    cout << "\n";
+    //cout << "\n";
 }
 //-----------------------------------------------------------------
 // Prints out SYNTAX ERROR
@@ -294,7 +294,6 @@ bool* Project2::check_if_generate()
     vector<string> nonterminals = get_nonterminals();
     vector<string> terminals    = get_terminals(nonterminals);
     vector<string> universe     = get_universe(terminals, nonterminals);
-    bool changed = false;
 
     bool generates[universe.size()];
     generates[0] = true;  // Epsilon Generates
@@ -306,22 +305,26 @@ bool* Project2::check_if_generate()
         generates[i + 2] = true;
     }
 
+    bool rulesGenerate[ruleSet.size()];
+
+    bool changed = false;
     // Check if Nonterminals Generate
     do
     {
+        changed = false;
         // Iterate through rule list
-        for (int i = terminals.size() - 1; i < ruleSet.size(); i++)
+        for (int i = 0; i < ruleSet.size(); i++)
         {
             int count = 0;
 
             // Check if RHS rules generate
             for (int j = 0; j < ruleSet.at(i).RHS.size(); j++)
             {
-                
                 // If we have the rule A -> epsilon, it generates
                 if (ruleSet.at(i).RHS.at(j).size() == 0)
                 {
                     generates[get_index(&universe, ruleSet.at(i).LHS)] = true;
+                    rulesGenerate[i] = true;
                     changed = true;
                     break;
                 }
@@ -336,12 +339,13 @@ bool* Project2::check_if_generate()
             if (count == ruleSet.at(i).RHS.size())
             {
                 generates[get_index(&universe, ruleSet.at(i).LHS)] = true;
+                rulesGenerate[i] = true;
                 changed = true;
             }
         }
     } while (changed);
 
-    return generates;
+    return rulesGenerate;
 }
 
 // read grammar
@@ -355,7 +359,7 @@ void Project2::ReadGrammar()
 void Project2::printTerminalsAndNoneTerminals()
 {
     vector<string> nonterminals = get_nonterminals();
-    vector<string> terminals = get_terminals();
+    vector<string> terminals = get_terminals(nonterminals);
     vector<string> inOrder;
     for (int i = 0; i < ruleSet.size(); i++) {
         for (int j = 0; j < ruleSet.at(i).RHS.size(); j++) {
@@ -372,6 +376,17 @@ void Project2::printTerminalsAndNoneTerminals()
 // Task 2
 void Project2::RemoveUselessSymbols()
 {
+    bool* rulesGenerate = check_if_generate();
+    
+    vector<rule> generatingRules;
+    for (int i = 0; i < ruleSet.size(); i++)
+    {
+        if (rulesGenerate[i])
+        {
+            generatingRules.insert(generatingRules.end(), ruleSet.at(i));
+        }
+    }
+
     cout << "2\n";
 }
 
