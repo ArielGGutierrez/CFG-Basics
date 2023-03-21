@@ -7,6 +7,11 @@
 #include <string>
 #include <vector>
 
+#include "lexer.h"
+#include "project2.h"
+
+using namespace std;
+
 struct rule
 {
 	string LHS;
@@ -30,7 +35,7 @@ class Project2
 		bool combine_sets(vector<string>* dstSet, vector<string>* srcSet);
 		bool is_epsilon_in(vector<string>* set);
 		bool add_epsilon(vector<string>* set);
-		void print_set_in_order(vector<string>* set, vector<string>* order);
+		void print_set(vector<string>* set);
 
 		void syntax_error();
 		void expect(TokenType token);
@@ -46,7 +51,7 @@ class Project2
 		vector<string> get_universe(vector<string> nonterminals, vector<string> terminals);
 
 		bool* check_if_generate(vector<rule> rules);
-		bool* check_if_reachable(vector<string> rulesGen);
+		bool* check_if_reachable(vector<rule> rulesGen);
 
 		void ReadGrammar();
 		void printTerminalsAndNoneTerminals();

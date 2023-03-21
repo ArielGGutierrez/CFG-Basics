@@ -87,19 +87,12 @@ bool Project2::add_epsilon(vector<string>* set)
 }
 
 // Prints set according to a specified order
-void Project2::print_set_in_order(vector<string>* set, vector<string>* order)
+void Project2::print_set(vector<string>* set)
 {
-    for (int i = 0; i < order->size(); i++)
-    {
-        for (int j = 0; j < set->size(); j++)
-        {
-            if (order->at(i).compare(set->at(j)) == 0)
-            {
-                cout << order->at(i) << " ";
-            }
-        }
-    }
-
+   for (int i = 0; i < set->size(); i++)
+   {
+        cout << set->at(i) << " ";
+   }
     //cout << "\n";
 }
 //-----------------------------------------------------------------
@@ -348,16 +341,55 @@ bool* Project2::check_if_generate(vector<rule> rules)
     return rulesGenerate;
 }
 
-bool* Project2::check_if_reachable(vector<string> rulesGen)
+bool* Project2::check_if_reachable(vector<rule> rulesGen)
 {
+    vector<string> nonterminals = get_nonterminals(rulesGen);
+    bool nonterminalsReach[nonterminals.size()];
+    nonterminals[0] = true;
     
+    // Check if Nonterminal can be reached
+    for (int i = 0; i < rulesGen.size(); i++)
+    {
+        string lhs = rulesGen.at(i).LHS;
+
+        int indexLHS = get_index(&nonterminals, lhs);
+
+        if (nonterminalsReach[indexLHS])
+        {
+            for (int j = 0; j < rulesGen.at(i).RHS.size(); j++)
+            {
+                string rhs = rulesGen.at(i).RHS.at(j);
+                int indexRHS = get_index(&nonterminals, rhs);
+
+                if (indexRHS > 0)
+                {
+                    nonterminalsReach[indexRHS] = true;
+                }
+            }
+        }
+    }
+
+    bool rulesReach[rulesGen.size()];
+
+    // Check if rules can be reached
+    for (int i = 0; i < rulesGen.size(); i++)
+    {
+        int indexNonterminal = get_index(&nonterminals, rulesGen.at(i).LHS);
+
+        if (nonterminalsReach[indexNonterminal])
+        {
+            rulesReach[i] = true;
+        }
+    }
+
+    return rulesReach;
 }
 
 // read grammar
 void Project2::ReadGrammar()
 {
     parse_grammar();
-    cout << "0\n";
+    //cout << "0\n";
 }
 
 // Task 1
@@ -367,15 +399,19 @@ void Project2::printTerminalsAndNoneTerminals()
     vector<string> terminals = get_terminals(ruleSet, nonterminals);
     vector<string> inOrder;
     for (int i = 0; i < ruleSet.size(); i++) {
+        if (str_is_in_set(&nonterminals, ruleSet.at(i).LHS) && !str_is_in_set(&inOrder, ruleSet.at(i).LHS)) {
+            inOrder.insert(inOrder.end(), ruleSet.at(i).LHS);
+        }
+        
         for (int j = 0; j < ruleSet.at(i).RHS.size(); j++) {
-            if (str_is_in_set(&nonterminals, ruleSet.at(i).RHS.at(j))) {
+            if (str_is_in_set(&nonterminals, ruleSet.at(i).RHS.at(j)) && !str_is_in_set(&inOrder, ruleSet.at(i).RHS.at(j))) {
                 inOrder.insert(inOrder.end(), ruleSet.at(i).RHS.at(j));
             }
         }
     }
-        print_set_in_order(&terminals, &terminals);
-        print_set_in_order(&inOrder, &inOrder);
-    cout << "1\n";
+    print_set(&terminals);
+    print_set(&inOrder);
+    //cout << "1\n";
 }
 
 // Task 2
@@ -391,6 +427,27 @@ void Project2::RemoveUselessSymbols()
             generatingRules.insert(generatingRules.end(), ruleSet.at(i));
         }
     }
+
+    bool* rulesReachable = check_if_reachable(generatingRules);
+
+    vector<rule> usefulRules;
+    for (int i = 0; i < generatingRules.size(); i++)
+    {
+        if (rulesReachable[i])
+        {
+            usefulRules.insert(usefulRules.end(), generatingRules.at(i));
+        }
+    }
+
+    for (int i = 0; i < usefulRules.size(); i++)
+    {
+        rule Rule = usefulRules.at(i);
+
+        cout << Rule.LHS << " -> ";
+        print_set(&Rule.RHS);
+        cout << "\n";
+    }
+
     cout << "2\n";
 }
 
