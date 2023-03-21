@@ -41,11 +41,12 @@ class Project2
 		void parse_rule();
 		void parse_rhs();
 
-		vector<string> get_nonterminals();
-		vector<string> get_terminals(vector<string> nonterminals);
+		vector<string> get_nonterminals(vector<rule> rules);
+		vector<string> get_terminals(vector<rule> rules, vector<string> nonterminals);
 		vector<string> get_universe(vector<string> nonterminals, vector<string> terminals);
 
-		bool* check_if_generate();
+		bool* check_if_generate(vector<rule> rules);
+		bool* check_if_reachable(vector<string> rulesGen);
 
 		void ReadGrammar();
 		void printTerminalsAndNoneTerminals();
