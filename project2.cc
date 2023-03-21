@@ -7,47 +7,56 @@
 #include <cstdio>
 #include <cstdlib>
 #include <string>
-#include "lexer.h"
 
+#include "lexer.h"
 #include "project2.h"
 
 using namespace std;
 
-struct rule
-{
-    string LHS;
-    vector<string> RHS;
-};
-
 /* Set Operations */
 //-----------------------------------------------------------------
-bool project2::combine_sets(vector<string>* dstSet, vector<string>* srcSet)
+int Project2::get_index(vector<string>* universe, string str)
+{
+    for (int i = 0; i < universe->size(); i++)
+    {
+        if (str.compare(universe->at(i)) == 0)
+        {
+            return i;
+        }
+    }
+
+    return -1;
+
+}
+
+bool Project2::str_is_in_set(vector<string>* srcSet, string str)
+{
+    for (int i = 0; i < srcSet->size(); i++)
+    {
+        if (str.compare(srcSet->at(i)) == 0)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool Project2::combine_sets(vector<string>* dstSet, vector<string>* srcSet)
 {
     bool hasChanged = false;
     for (int i = 0; i < srcSet->size(); i++)
     {
-        if (srcSet->at(i).compare("#") != 0)
+        if (srcSet->at(i).compare("#") != 0 && !str_is_in_set(dstSet), srcSet->at(i))
         {
-            bool isPresent = false;
-            for (int j = 0; i < dstSet->size(); j++)
-            {
-                if (srcSet->at(i).compare(dstSet->at(j)) == 0)
-                {
-                    isPresent = true;
-                }
-            }
-
-            if (!isPresent)
-            {
-                hasChanged = true;
-                dstSet->insert(dstSet->end(),srcSet->at(i));
-            }
+            hasChanged = true;
+            dstSet->insert(dstSet->end(),srcSet->at(i));
         }
     }
     return hasChanged;
 }
 
-bool project2::is_epsilon_in(vector<string>* set)
+bool Project2::is_epsilon_in(vector<string>* set)
 {
     for (int i = 0; i < set->size(); i++)
     {
@@ -60,7 +69,7 @@ bool project2::is_epsilon_in(vector<string>* set)
     return false;
 }
 
-bool project2::add_epsilon(vector<string>* set)
+bool Project2::add_epsilon(vector<string>* set)
 {
     bool hasChanged = is_epsilon_in(set);
 
@@ -72,7 +81,7 @@ bool project2::add_epsilon(vector<string>* set)
     return hasChanged;
 }
 
-void project2::print_set_in_order(vector<string>* set, vector<string>* order)
+void Project2::print_set_in_order(vector<string>* set, vector<string>* order)
 {
     for (int i = 0; i < order->size(); i++)
     {
@@ -89,12 +98,12 @@ void project2::print_set_in_order(vector<string>* set, vector<string>* order)
 }
 //-----------------------------------------------------------------
 
-void project2::syntax_error()
+void Project2::syntax_error()
 {
     cout << "Syntax Error DUMMY";
 }
 
-void project2::expect(TokenType token)
+void Project2::expect(TokenType token)
 {
     Token t = lexer.peek(1);
     if (token == t.token_type)
@@ -109,7 +118,7 @@ void project2::expect(TokenType token)
 
 /* Parsing */
 //--------------------------------------------------
-void project2::parse_grammar()
+void Project2::parse_grammar()
 {
     parse_rule_list();
     Token t = lexer.peek(1);
@@ -125,7 +134,7 @@ void project2::parse_grammar()
     }
 }
 
-void project2::parse_rule_list()
+void Project2::parse_rule_list()
 {
     parse_rule();
     Token t = lexer.peek(1);
@@ -135,7 +144,7 @@ void project2::parse_rule_list()
     }
 }
 
-void project2::parse_id_list()
+void Project2::parse_id_list()
 {
     Token t = lexer.peek(1);
     if (t.token_type == ID)
@@ -143,14 +152,14 @@ void project2::parse_id_list()
         Rule.RHS.insert(Rule.RHS.end(), t.lexeme);
         expect(ID);
         t = lexer.peek(1);
-        if (t.token_type == ID
+        if (t.token_type == ID)
         {
             parse_id_list();
         }
     }
 }
 
-void project2::parse_rule()
+void Project2::parse_rule()
 {
     Token t = lexer.peek(1);
     if (t.token_type == ID)
@@ -186,7 +195,7 @@ void project2::parse_rule()
     }
 }
 
-void project2::parse_rhs()
+void Project2::parse_rhs()
 {
     Token t = lexer.peek(1);
     if (t.token_type == ID)
@@ -200,7 +209,7 @@ void project2::parse_rhs()
 }
 //--------------------------------------------------
 
-vector<string> project2::get_nonterminals()
+vector<string> Project2::get_nonterminals()
 {
     vector<string> nonterminals;
 
@@ -212,7 +221,7 @@ vector<string> project2::get_nonterminals()
     return nonterminals;
 }
 
-vector<string> project2::get_terminals(vector<string> nonterminals)
+vector<string> Project2::get_terminals(vector<string> nonterminals)
 {
     vector<string> terminals;
     for (int i = 0; i < ruleSet.size(); i++)
@@ -256,10 +265,8 @@ vector<string> project2::get_terminals(vector<string> nonterminals)
     return terminals;
 }
 
-vector<string> project2::get_universe(vector<string> nonterminals, vector<string> terminals)
+vector<string> Project2::get_universe(vector<string> terminals, vector<string> nonterminals)
 {
-    //vector<string> nonterminals = get_nonterminals();
-    //vector<string> terminals    = get_terminals(nonterminals);
     vector<string> universe;
 
     universe.insert(universe.end(), "#"); // Epsilon
@@ -270,59 +277,95 @@ vector<string> project2::get_universe(vector<string> nonterminals, vector<string
 
     return universe;
 }
-/*
-int* project2::check_if_generate()
+
+int* Project2::check_if_generate()
 {
     vector<string> nonterminals = get_nonterminals();
     vector<string> terminals    = get_terminals(nonterminals);
-    vector<string> universe     = get_universe(nonterminals, terminals);
-    bool done = false;
+    vector<string> universe     = get_universe(terminals, nonterminals);
+    bool changed = false;
 
-    int generates[universe.size()];
-    generates[0] = 1;  // Epsilon Generates
-    generates[1] = -1; // EOF Doesn't Generate
+    bool generates[universe.size()];
+    generates[0] = true;  // Epsilon Generates
+    generates[1] = false; // EOF Doesn't Generate
 
+    // Terminals Generate
+    for (int i = 0; i < terminals.size(); i++)
+    {
+        generates[i + 2] = true;
+    }
+
+    // Check if Nonterminals Generate
     do
     {
+        // Iterate through rule list
+        for (int i = terminals.size() - 1; i < ruleSet.size(); i++)
+        {
+            int count = 0;
 
-    } while (!done);
+            // Check if RHS rules generate
+            for (int j = 0; j < ruleSet.at(i).RHS.size(); j++)
+            {
+                
+                // If we have the rule A -> epsilon, it generates
+                if (ruleSet.at(i).RHS.at(j).size() == 0)
+                {
+                    generates[get_index(&universe, ruleSet.at(i).LHS)] = true;
+                    changed = true;
+                    break;
+                }
+
+                // If not we need to know if the terminals/nonterminals generate
+                else if (generates[get_index(&universe, ruleSet.at(i).LHS)] == true)
+                {
+                    count++;
+                }
+            }
+            // If all terminals and nonterminals generate, then the rule generates
+            if (count == ruleSet.at(i).RHS.at(j).size())
+            {
+                generates[get_index(&universe, ruleSet.at(i).LHS)] = true;
+                changed = true;
+            }
+        }
+    } while (changed);
 
     return generates;
 }
-*/
+
 // read grammar
-void project2::ReadGrammar()
+void Project2::ReadGrammar()
 {
     parse_grammar();
     cout << "0\n";
 }
 
 // Task 1
-void project2::printTerminalsAndNoneTerminals()
+void Project2::printTerminalsAndNoneTerminals()
 {
     cout << "1\n";
 }
 
 // Task 2
-void project2::RemoveUselessSymbols()
+void Project2::RemoveUselessSymbols()
 {
     cout << "2\n";
 }
 
 // Task 3
-void project2::CalculateFirstSets()
+void Project2::CalculateFirstSets()
 {
     cout << "3\n";
 }
 
 // Task 4
-void project2::CalculateFollowSets()
+void Project2::CalculateFollowSets()
 {
     cout << "4\n";
 }
 
 // Task 5
-void project2::CheckIfGrammarHasPredictiveParser()
+void Project2::CheckIfGrammarHasPredictiveParser()
 {
     cout << "5\n";
 }
@@ -343,25 +386,31 @@ int main (int argc, char* argv[])
     */
 
     task = atoi(argv[1]);
-    
-    ReadGrammar();  // Reads the input grammar from standard input
-                    // and represent it internally in data structures
-                    // ad described in project 2 presentation file
+
+    Project2 project2;
+    project2.ReadGrammar();  // Reads the input grammar from standard input
+                             // and represent it internally in data structures
+                             // ad described in project 2 presentation file
 
     switch (task) {
-        case 1: printTerminalsAndNoneTerminals();
+        case 1: 
+            project2.printTerminalsAndNoneTerminals();
             break;
 
-        case 2: RemoveUselessSymbols();
+        case 2: 
+            project2.RemoveUselessSymbols();
             break;
 
-        case 3: CalculateFirstSets();
+        case 3: 
+            project2.CalculateFirstSets();
             break;
 
-        case 4: CalculateFollowSets();
+        case 4: 
+            project2.CalculateFollowSets();
             break;
 
-        case 5: CheckIfGrammarHasPredictiveParser();
+        case 5: 
+            project2.CheckIfGrammarHasPredictiveParser();
             break;
 
         default:

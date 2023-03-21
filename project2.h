@@ -1,19 +1,32 @@
 #ifndef __PROJECT2__H__
 #define __PROJECT2__H__
 
-#include <vector>
+#include <iostream>
+#include <cstdio>
+#include <cstdlib>
 #include <string>
+#include <vector>
 
-class project2
+struct rule
+{
+	string LHS;
+	vector<string> RHS;
+};
+
+class Project2
 {
 	private:
+		
+	public:
 		LexicalAnalyzer lexer;
-		vector<rule> ruleSet;
+		std::vector<rule> ruleSet;
 		struct rule Rule;
 
-		vector<string> terminals;
-		vector<string> nonTerminals;
-	public:
+		std::vector<string> terminals;
+		std::vector<string> nonTerminals;
+
+		int get_index(vector<string>* universe, string str);
+		bool str_is_in_set(vector<string>* srcSet, string str);
 		bool combine_sets(vector<string>* dstSet, vector<string>* srcSet);
 		bool is_epsilon_in(vector<string>* set);
 		bool add_epsilon(vector<string>* set);
@@ -31,6 +44,8 @@ class project2
 		vector<string> get_nonterminals();
 		vector<string> get_terminals(vector<string> nonterminals);
 		vector<string> get_universe(vector<string> nonterminals, vector<string> terminals);
+
+		int* check_if_generate();
 
 		void ReadGrammar();
 		void printTerminalsAndNoneTerminals();
