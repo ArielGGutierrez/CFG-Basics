@@ -354,6 +354,18 @@ void Project2::ReadGrammar()
 // Task 1
 void Project2::printTerminalsAndNoneTerminals()
 {
+    vector<string> nonterminals = get_nonterminals();
+    vector<string> terminals = get_terminals();
+    vector<string> inOrder;
+    for (int i = 0; i < ruleSet.size(); i++) {
+        for (int j = 0; j < ruleSet.at(i).RHS.size(); j++) {
+            if (str_is_in_set(&nonterminals, ruleSet.at(i).RHS.at(j))) {
+                inOrder.insert(inOrder.end(), ruleSet.at(i).RHS.at(j));
+            }
+        }
+    }
+        print_set_in_order(&terminals, &terminals);
+        print_set_in_order(&inOrder, &inOrder);
     cout << "1\n";
 }
 
