@@ -15,6 +15,7 @@ using namespace std;
 
 /* Set Operations */
 //-----------------------------------------------------------------
+// Gets the index that a given string would be in a given universe
 int Project2::get_index(vector<string>* universe, string str)
 {
     for (int i = 0; i < universe->size(); i++)
@@ -29,6 +30,7 @@ int Project2::get_index(vector<string>* universe, string str)
 
 }
 
+// Checks if a given element is part of a given set
 bool Project2::str_is_in_set(vector<string>* srcSet, string str)
 {
     for (int i = 0; i < srcSet->size(); i++)
@@ -42,6 +44,7 @@ bool Project2::str_is_in_set(vector<string>* srcSet, string str)
     return false;
 }
 
+// Adds elements of a source set to a destination set and returns true if this resulted in a change
 bool Project2::combine_sets(vector<string>* dstSet, vector<string>* srcSet)
 {
     bool hasChanged = false;
@@ -56,6 +59,7 @@ bool Project2::combine_sets(vector<string>* dstSet, vector<string>* srcSet)
     return hasChanged;
 }
 
+// Checks if epsilon is in a given set
 bool Project2::is_epsilon_in(vector<string>* set)
 {
     for (int i = 0; i < set->size(); i++)
@@ -69,6 +73,7 @@ bool Project2::is_epsilon_in(vector<string>* set)
     return false;
 }
 
+// Adds epsilon to a given set
 bool Project2::add_epsilon(vector<string>* set)
 {
     bool hasChanged = is_epsilon_in(set);
@@ -81,6 +86,7 @@ bool Project2::add_epsilon(vector<string>* set)
     return hasChanged;
 }
 
+// Prints set according to a specified order
 void Project2::print_set_in_order(vector<string>* set, vector<string>* order)
 {
     for (int i = 0; i < order->size(); i++)
@@ -97,12 +103,13 @@ void Project2::print_set_in_order(vector<string>* set, vector<string>* order)
     cout << "\n";
 }
 //-----------------------------------------------------------------
-
+// Prints out SYNTAX ERROR
 void Project2::syntax_error()
 {
     cout << "Syntax Error DUMMY";
 }
 
+// Calls getToken
 void Project2::expect(TokenType token)
 {
     Token t = lexer.peek(1);
@@ -209,6 +216,7 @@ void Project2::parse_rhs()
 }
 //--------------------------------------------------
 
+// Gets list of nonterminals from ruleSet
 vector<string> Project2::get_nonterminals()
 {
     vector<string> nonterminals;
@@ -221,6 +229,7 @@ vector<string> Project2::get_nonterminals()
     return nonterminals;
 }
 
+// Gets list of terminals from RHS of ruleSet
 vector<string> Project2::get_terminals(vector<string> nonterminals)
 {
     vector<string> terminals;
@@ -265,6 +274,7 @@ vector<string> Project2::get_terminals(vector<string> nonterminals)
     return terminals;
 }
 
+// Gets list of terminals and nonterminals
 vector<string> Project2::get_universe(vector<string> terminals, vector<string> nonterminals)
 {
     vector<string> universe;
@@ -278,6 +288,7 @@ vector<string> Project2::get_universe(vector<string> terminals, vector<string> n
     return universe;
 }
 
+// Checks if rules can generate
 bool* Project2::check_if_generate()
 {
     vector<string> nonterminals = get_nonterminals();
@@ -419,4 +430,3 @@ int main (int argc, char* argv[])
     }
     return 0;
 }
-
