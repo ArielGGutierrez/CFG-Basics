@@ -11,9 +11,22 @@
 
 using namespace std;
 
-vector<string> lmaoSet;
-Lexer lexer;
+LexicalAnalyzer lexer;
 
+struct rule
+{
+    string LHS;
+    vector<string> RHS;
+};
+
+vector<rule> ruleSet;
+struct rule Rule;
+
+vector<string> terminals;
+vector<string> nonTerminals;
+
+/* Set Operations */
+//-----------------------------------------------------------------
 bool combine_sets(vector<string>* dstSet, vector<string>* srcSet) 
 {
     bool hasChanged = false;
@@ -80,14 +93,8 @@ void print_set_in_order(vector<string>* set, vector<string>* order)
 
     cout << "\n";
 }
+//-----------------------------------------------------------------
 
-struct rule
-{
-    string LHS;
-    vector<string> RHS;
-};
-
-vector<rule> ruleSet;
 void expect(string token)
 {
     Token t = lexer.peek(1);
@@ -106,6 +113,8 @@ void syntax_error()
     cout << "Syntax Error DUMMY";
 }
 
+/* Parsing */
+//--------------------------------------------------
 void parse_grammar()
 {
     parse_rule_list();
@@ -123,10 +132,8 @@ void parse_grammar()
 }
 
 void parse_rule_list()
-
 {
     parse_rule();
-
     Token t = lexer.peek(1);
     if (t.token_type == "ID")
     {
@@ -139,8 +146,8 @@ void parse_id_list()
     Token t = lexer.peek(1);
     if (t.token_type == "ID")
     {
+        Rule.RHS.insert(Rule.RHS.end(), t.lexeme);
         expect("ID");
-
         t = lexer.peek(1);
         if (t.token_type == "ID")
         {
@@ -154,15 +161,19 @@ void parse_rule()
     Token t = lexer.peek(1);
     if (t.token_type == "ID")
     {
+        Rule.LHS = t.lexeme;
         expect("ID");
         t = lexer.peek(1);
         if (t.token_type == "ARROW")
         {
             expect("ARROW");
             parse_rhs();
+            t = lexer.peek(1);
             if (t.token_type == "STAR")
             {
+                ruleSet.insert(ruleSet.end(), Rule);
                 expect("STAR");
+                return;
             }
             else
             {
@@ -193,7 +204,52 @@ void parse_rhs()
         return;
     }
 }
+//--------------------------------------------------
+/*
+vector<string> get_nonterminals()
+{
+    vector<string> nonterminals;
 
+    for (int i = 0; i < ruleSet.size; i++)
+    {
+        nonterminals.insert(nonterminals.end(), ruleSet.at(i).LHS);
+    }
+
+    return nonterminals;
+}
+
+vector<string> get_terminals(vector<string> nonterminals)
+{
+    vector<string> terminals;
+    for (int i = 0; i < ruleSet.size(); i++)
+    {
+        for (int j = 0; j < ruleSet.at(i).RHS.size(); j++)
+        {
+            string str = ruleSet.at(i).RHS.at(j);
+        }
+        //nonterminals.insert(nonterminals.end(), ruleSet.at(i).LHS);
+    }
+
+    return terminals;
+}
+
+int[] check_if_generate()
+{
+    vector<string> nonterminals = get_nonterminals();
+    bool done = false;
+
+    int generates[nonterminals.size()];
+
+    do
+    {
+
+
+
+    } while (!done);
+
+    return generates;
+}
+*/
 // read grammar
 void ReadGrammar()
 {
