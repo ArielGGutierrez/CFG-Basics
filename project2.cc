@@ -99,7 +99,8 @@ void Project2::print_set(vector<string>* set)
 // Prints out SYNTAX ERROR
 void Project2::syntax_error()
 {
-    cout << "Syntax Error DUMMY";
+    cout << "SYNTAX ERROR !!!";
+    exit(EXIT_FAILURE);
 }
 
 // Calls getToken
@@ -116,7 +117,7 @@ void Project2::expect(TokenType token)
     }
 }
 
-/* Parsing */
+/* Parsing - Ariel Gutierrez */
 //--------------------------------------------------
 void Project2::parse_grammar()
 {
@@ -125,7 +126,16 @@ void Project2::parse_grammar()
     if (t.token_type == HASH)
     {
         expect(HASH);
-        expect(END_OF_FILE);
+        Token t = lexer.peek(1);
+        if (t.token_type == END_OF_FILE)
+        {
+            expect(END_OF_FILE);
+        }
+
+        else
+        {
+            syntax_error();
+        }
     }
 
     else
@@ -157,6 +167,10 @@ void Project2::parse_id_list()
             parse_id_list();
         }
     }
+    else
+    {
+        syntax_error();
+    }
 }
 
 void Project2::parse_rule()
@@ -175,6 +189,7 @@ void Project2::parse_rule()
             if (t.token_type == STAR)
             {
                 ruleSet.insert(ruleSet.end(), Rule);
+                Rule.RHS.clear();
                 expect(STAR);
                 return;
             }
@@ -206,6 +221,10 @@ void Project2::parse_rhs()
     {
         return;
     }
+    else
+    {
+        syntax_error();
+    }
 }
 //--------------------------------------------------
 
@@ -216,7 +235,10 @@ vector<string> Project2::get_nonterminals(vector<rule> rules)
 
     for (int i = 0; i < rules.size(); i++)
     {
-        nonterminals.insert(nonterminals.end(), rules.at(i).LHS);
+        if (!str_is_in_set(&nonterminals, rules.at(i).LHS))
+        {
+            nonterminals.insert(nonterminals.end(), rules.at(i).LHS);
+        }
     }
 
     return nonterminals;
@@ -272,8 +294,8 @@ vector<string> Project2::get_universe(vector<string> terminals, vector<string> n
 {
     vector<string> universe;
 
-    universe.insert(universe.end(), "#"); // Epsilon
     universe.insert(universe.end(), "$"); // EOF
+    universe.insert(universe.end(), "#"); // Epsilon
 
     combine_sets(&universe, &terminals);
     combine_sets(&universe, &nonterminals);
@@ -288,20 +310,29 @@ bool* Project2::check_if_generate(vector<rule> rules)
     vector<string> terminals    = get_terminals(rules, nonterminals);
     vector<string> universe     = get_universe(terminals, nonterminals);
 
-    bool generates[universe.size()];
-    generates[0] = true;  // Epsilon Generates
-    generates[1] = false; // EOF Doesn't Generate
-
-    // Terminals Generate
-    for (int i = 0; i < terminals.size(); i++)
+    // Checks if a given Symbol generates
+    bool symbolGen [universe.size()];
+    for (int i = 0; i < universe.size(); i++)
     {
-        generates[i + 2] = true;
+        symbolGen[i] = false;
     }
 
-    bool rulesGenerate[rules.size()];
+    // Checks if a given rule generates
+    bool* ruleGen = new bool [rules.size()];
+    for (int i = 0; i < rules.size(); i++)
+    {
+        ruleGen[i] = false;
+    }
 
-    bool changed = false;
+    // Terminals Generate
+    for (int i = 0; i < terminals.size()+1; i++)
+    {
+        symbolGen[i+1] = true;
+    }
+
     // Check if Nonterminals Generate
+    bool changed = false;
+
     do
     {
         changed = false;
@@ -309,52 +340,61 @@ bool* Project2::check_if_generate(vector<rule> rules)
         for (int i = 0; i < rules.size(); i++)
         {
             int count = 0;
+            string lhs = rules.at(i).LHS;
 
-            // Check if RHS rules generate
-            for (int j = 0; j < rules.at(i).RHS.size(); j++)
+            if (!ruleGen[i])
             {
-                // If we have the rule A -> epsilon, it generates
-                if (rules.at(i).RHS.at(j).size() == 0)
+                // Check if RHS rules generate
+                for (int j = 0; j < rules.at(i).RHS.size(); j++)
                 {
-                    generates[get_index(&universe, rules.at(i).LHS)] = true;
-                    rulesGenerate[i] = true;
+                    string rhs = rules.at(i).RHS.at(j);
+
+                    // check if terminals/nonterminals generate
+                    if (symbolGen[get_index(&universe, rhs)])
+                    {
+                        count++;
+                    }
+
+                    else
+                    {
+                        break;
+                    }
+                }
+
+                // If all terminals and nonterminals generate, then the rule generates
+                if (count == rules.at(i).RHS.size())
+                {
+                    symbolGen[get_index(&universe, lhs)] = true;
+                    ruleGen[i] = true;
                     changed = true;
-                    break;
                 }
-
-                // If not we need to know if the terminals/nonterminals generate
-                else if (generates[get_index(&universe, rules.at(i).LHS)] == true)
-                {
-                    count++;
-                }
-            }
-            // If all terminals and nonterminals generate, then the rule generates
-            if (count == rules.at(i).RHS.size())
-            {
-                generates[get_index(&universe, rules.at(i).LHS)] = true;
-                rulesGenerate[i] = true;
-                changed = true;
             }
         }
+        
     } while (changed);
 
-    return rulesGenerate;
+    return ruleGen;
 }
 
 bool* Project2::check_if_reachable(vector<rule> rulesGen)
 {
     vector<string> nonterminals = get_nonterminals(rulesGen);
-    bool nonterminalsReach[nonterminals.size()];
-    nonterminals[0] = true;
+
+    // Initialization
+    bool symbolReach[nonterminals.size()];
+    for (int i = 1; i < nonterminals.size(); i++)
+    {
+        symbolReach[i] = false;
+    }
+    symbolReach[0] = true;
     
     // Check if Nonterminal can be reached
     for (int i = 0; i < rulesGen.size(); i++)
     {
         string lhs = rulesGen.at(i).LHS;
-
         int indexLHS = get_index(&nonterminals, lhs);
 
-        if (nonterminalsReach[indexLHS])
+        if (symbolReach[indexLHS])
         {
             for (int j = 0; j < rulesGen.at(i).RHS.size(); j++)
             {
@@ -363,20 +403,20 @@ bool* Project2::check_if_reachable(vector<rule> rulesGen)
 
                 if (indexRHS > 0)
                 {
-                    nonterminalsReach[indexRHS] = true;
+                    symbolReach[indexRHS] = true;
                 }
             }
         }
     }
 
-    bool rulesReach[rulesGen.size()];
+    bool* rulesReach = new bool [rulesGen.size()];
 
     // Check if rules can be reached
     for (int i = 0; i < rulesGen.size(); i++)
     {
         int indexNonterminal = get_index(&nonterminals, rulesGen.at(i).LHS);
 
-        if (nonterminalsReach[indexNonterminal])
+        if (symbolReach[indexNonterminal])
         {
             rulesReach[i] = true;
         }
@@ -389,10 +429,19 @@ bool* Project2::check_if_reachable(vector<rule> rulesGen)
 void Project2::ReadGrammar()
 {
     parse_grammar();
+
+    for (int i = 0; i < ruleSet.size(); i++)
+    {
+        if (ruleSet.at(i).RHS.empty())
+        {
+            ruleSet.at(i).RHS.insert(ruleSet.at(i).RHS.end(), "#");
+        }
+    }
+
     //cout << "0\n";
 }
 
-// Task 1
+// Task 1 - Salvador Gomez
 void Project2::printTerminalsAndNoneTerminals()
 {
     vector<string> nonterminals = get_nonterminals(ruleSet);
@@ -409,25 +458,36 @@ void Project2::printTerminalsAndNoneTerminals()
             }
         }
     }
-    print_set(&terminals);
+
+    vector<string> termMinusEps;
+    for (int i = 0; i < terminals.size(); i++)
+    {
+        if (terminals.at(i).compare("#") != 0)
+        {
+            termMinusEps.insert(termMinusEps.end(), terminals.at(i));
+        }
+    }
+
+    print_set(&termMinusEps);
     print_set(&inOrder);
     //cout << "1\n";
 }
 
-// Task 2
+// Task 2 - Ariel Gutierrez
 void Project2::RemoveUselessSymbols()
 {
     bool* rulesGenerate = check_if_generate(ruleSet);
-    
+
     vector<rule> generatingRules;
     for (int i = 0; i < ruleSet.size(); i++)
     {
         if (rulesGenerate[i])
         {
             generatingRules.insert(generatingRules.end(), ruleSet.at(i));
+            
         }
     }
-
+    
     bool* rulesReachable = check_if_reachable(generatingRules);
 
     vector<rule> usefulRules;
@@ -439,6 +499,18 @@ void Project2::RemoveUselessSymbols()
         }
     }
 
+    bool hasBeg = false;
+    for (int i = 0; i < usefulRules.size(); i++)
+    {
+        if (usefulRules.at(i).LHS.compare(ruleSet.at(0).LHS) == 0)
+        {
+            hasBeg = true;
+            break;
+        }
+    }
+
+    if (!hasBeg) usefulRules.clear();
+
     for (int i = 0; i < usefulRules.size(); i++)
     {
         rule Rule = usefulRules.at(i);
@@ -447,8 +519,8 @@ void Project2::RemoveUselessSymbols()
         print_set(&Rule.RHS);
         cout << "\n";
     }
-
-    cout << "2\n";
+    
+    //cout << "2\n";
 }
 
 // Task 3
@@ -480,23 +552,26 @@ int main (int argc, char* argv[])
     }
 
     /*
-       Note that by convention argv[0] is the name of your executable,
-       and the first argument to your program is stored in argv[1]
+        Note that by convention argv[0] is the name of your executable,
+        and the first argument to your program is stored in argv[1]
     */
-
     task = atoi(argv[1]);
-
+    
     Project2 project2;
-    project2.ReadGrammar();  // Reads the input grammar from standard input
-                             // and represent it internally in data structures
-                             // ad described in project 2 presentation file
+    /*
+        Reads the input grammar from standard input
+        and represent it internally in data structures
+        as described in project 2 presentation file
+    */
+    project2.ReadGrammar();  
+    
 
     switch (task) {
         case 1: 
             project2.printTerminalsAndNoneTerminals();
             break;
 
-        case 2: 
+        case 2:
             project2.RemoveUselessSymbols();
             break;
 

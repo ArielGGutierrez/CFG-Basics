@@ -8,7 +8,6 @@
 #include <vector>
 
 #include "lexer.h"
-#include "project2.h"
 
 using namespace std;
 
@@ -24,11 +23,11 @@ class Project2
 		
 	public:
 		LexicalAnalyzer lexer;
-		std::vector<rule> ruleSet;
+		vector<rule> ruleSet;
 		struct rule Rule;
 
-		std::vector<string> terminals;
-		std::vector<string> nonTerminals;
+		vector<string> terminals;
+		vector<string> nonTerminals;
 
 		int  get_index(vector<string>* universe, string str);
 		bool str_is_in_set(vector<string>* srcSet, string str);
