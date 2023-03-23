@@ -27,7 +27,6 @@ int Project2::get_index(vector<string>* universe, string str)
     }
 
     return -1;
-
 }
 
 // Checks if a given element is part of a given set
@@ -410,6 +409,10 @@ bool* Project2::check_if_reachable(vector<rule> rulesGen)
     }
 
     bool* rulesReach = new bool [rulesGen.size()];
+    for (int i = 0; i < rulesGen.size(); i++)
+    {
+        rulesReach[i] = false;
+    }
 
     // Check if rules can be reached
     for (int i = 0; i < rulesGen.size(); i++)
@@ -479,6 +482,8 @@ void Project2::RemoveUselessSymbols()
     bool* rulesGenerate = check_if_generate(ruleSet);
 
     vector<rule> generatingRules;
+    vector<rule> usefulRules;
+
     for (int i = 0; i < ruleSet.size(); i++)
     {
         if (rulesGenerate[i])
@@ -490,7 +495,6 @@ void Project2::RemoveUselessSymbols()
     
     bool* rulesReachable = check_if_reachable(generatingRules);
 
-    vector<rule> usefulRules;
     for (int i = 0; i < generatingRules.size(); i++)
     {
         if (rulesReachable[i])
@@ -499,17 +503,7 @@ void Project2::RemoveUselessSymbols()
         }
     }
 
-    bool hasBeg = false;
-    for (int i = 0; i < usefulRules.size(); i++)
-    {
-        if (usefulRules.at(i).LHS.compare(ruleSet.at(0).LHS) == 0)
-        {
-            hasBeg = true;
-            break;
-        }
-    }
-
-    if (!hasBeg) usefulRules.clear();
+    if (!usefulRules.empty() && usefulRules.at(0).LHS.compare(ruleSet.at(0).LHS) != 0) usefulRules.clear();
 
     for (int i = 0; i < usefulRules.size(); i++)
     {
