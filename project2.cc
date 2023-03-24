@@ -75,34 +75,52 @@ bool Project2::is_epsilon_in(vector<string>* set)
 // Adds epsilon to a given set
 bool Project2::add_epsilon(vector<string>* set)
 {
-    bool hasChanged = is_epsilon_in(set);
+    bool hasEpsilon = is_epsilon_in(set);
 
-    if (hasChanged)
+    if (!hasEpsilon)
     {
-        set->insert(set->end(), "#");
+        set->insert(set->begin(), "#");
     }
 
-    return hasChanged;
+    return !hasEpsilon;
 }
 
-// Prints set according to a specified order
+// Prints set
 void Project2::print_set(vector<string>* set)
 {
    for (int i = 0; i < set->size(); i++)
    {
         cout << set->at(i) << " ";
    }
-    //cout << "\n";
+}
+
+// Prints set in a specified order
+void Project2::print_set_in_order(vector<string>* set, vector<string>* order)
+{
+   string out1;
+   for (int i = 0; i < order->size(); i++)
+   {
+        for (int j = 0; j < set->size(); j++)
+        {
+            if (order->at(i).compare(set->at(j)) == 0)
+            {
+                out1.append(set->at(j) + ", ");
+            }
+        }
+   }
+   string output = out1.substr(0, out1.size() -2 );
+   cout << output;
 }
 //-----------------------------------------------------------------
-// Prints out SYNTAX ERROR
+
+// Prints out SYNTAX ERROR !!!
 void Project2::syntax_error()
 {
     cout << "SYNTAX ERROR !!!";
     exit(EXIT_FAILURE);
 }
 
-// Calls getToken
+// Consumes input by callng GetToken
 void Project2::expect(TokenType token)
 {
     Token t = lexer.peek(1);
@@ -227,7 +245,7 @@ void Project2::parse_rhs()
 }
 //--------------------------------------------------
 
-// Gets list of nonterminals from ruleSet
+// Gets a set of nonterminals from ruleSet
 vector<string> Project2::get_nonterminals(vector<rule> rules)
 {
     vector<string> nonterminals;
@@ -243,7 +261,7 @@ vector<string> Project2::get_nonterminals(vector<rule> rules)
     return nonterminals;
 }
 
-// Gets list of terminals from RHS of ruleSet
+// Gets a set of terminals from RHS of ruleSet
 vector<string> Project2::get_terminals(vector<rule> rules, vector<string> nonterminals)
 {
     vector<string> terminals;
@@ -288,7 +306,7 @@ vector<string> Project2::get_terminals(vector<rule> rules, vector<string> nonter
     return terminals;
 }
 
-// Gets list of terminals and nonterminals
+// Gets a set of terminals and nonterminals
 vector<string> Project2::get_universe(vector<string> terminals, vector<string> nonterminals)
 {
     vector<string> universe;
@@ -302,6 +320,42 @@ vector<string> Project2::get_universe(vector<string> terminals, vector<string> n
     return universe;
 }
 
+// Gets a set without epsilon from a given set
+vector<string> Project2::get_set_without_epsilon(vector<string> set)
+{
+    vector<string> termMinusEps;
+    for (int i = 0; i < terminals.size(); i++)
+    {
+        if (terminals.at(i).compare("#") != 0)
+        {
+            termMinusEps.insert(termMinusEps.end(), terminals.at(i));
+        }
+    }
+    return termMinusEps;
+}
+
+// Get set of nonterminals in order of appearance in grammar
+vector<string> Project2::get_nonterminal_order(vector<rule> rules, vector<string> nonterminals)
+{
+    vector<string> inOrder;
+    for (int i = 0; i < rules.size(); i++) {
+        if (str_is_in_set(&nonterminals, rules.at(i).LHS) && !str_is_in_set(&inOrder, rules.at(i).LHS)) {
+            inOrder.insert(inOrder.end(), rules.at(i).LHS);
+        }
+        
+        for (int j = 0; j < rules.at(i).RHS.size(); j++) {
+            if (str_is_in_set(&nonterminals, rules.at(i).RHS.at(j)) && !str_is_in_set(&inOrder, rules.at(i).RHS.at(j))) {
+                inOrder.insert(inOrder.end(), rules.at(i).RHS.at(j));
+            }
+        }
+    }
+
+    return inOrder;
+}
+
+
+/* Task Helpers */
+//-----------------------------------------------------------------------------------------------------------------------
 // Checks if rules can generate
 bool* Project2::check_if_generate(vector<rule> rules)
 {
@@ -375,17 +429,25 @@ bool* Project2::check_if_generate(vector<rule> rules)
     return ruleGen;
 }
 
+// Check if rules can be reached
 bool* Project2::check_if_reachable(vector<rule> rulesGen)
 {
     vector<string> nonterminals = get_nonterminals(rulesGen);
+    bool symbolReach[nonterminals.size()];         // Checks if a given nonterminal is reachable
+    bool* rulesReach = new bool [rulesGen.size()]; // Checks if a given rule is reachable
 
-    // Initialization
-    bool symbolReach[nonterminals.size()];
+    // Initialize symbol reach, the first symbol is always reachable
+    symbolReach[0] = true;
     for (int i = 1; i < nonterminals.size(); i++)
     {
         symbolReach[i] = false;
     }
-    symbolReach[0] = true;
+    
+    // Initialize rules reach (Non of the rules are reachable at the beginning)
+    for (int i = 0; i < rulesGen.size(); i++)
+    {
+        rulesReach[i] = false;
+    }
     
     // Check if Nonterminal can be reached
     for (int i = 0; i < rulesGen.size(); i++)
@@ -408,12 +470,6 @@ bool* Project2::check_if_reachable(vector<rule> rulesGen)
         }
     }
 
-    bool* rulesReach = new bool [rulesGen.size()];
-    for (int i = 0; i < rulesGen.size(); i++)
-    {
-        rulesReach[i] = false;
-    }
-
     // Check if rules can be reached
     for (int i = 0; i < rulesGen.size(); i++)
     {
@@ -428,7 +484,113 @@ bool* Project2::check_if_reachable(vector<rule> rulesGen)
     return rulesReach;
 }
 
-// read grammar
+// Returns the first set of a Context-Free Grammar
+vector<rule> Project2::get_first_set(vector<rule> rules, vector<string> nonterminals, vector<string> terminals)
+{
+    vector<string> universe = get_universe(terminals, nonterminals);
+
+    vector<rule> first_set_universe;
+    vector<rule> first_set_nonterminals;
+    
+    rule tempRule;
+    for (int i = 0; i < universe.size(); i++)
+    {
+        tempRule.LHS = universe.at(i);
+        first_set_universe.insert(first_set_universe.end(), tempRule);
+    }
+    
+    /* Apply Rule 1 */
+    first_set_universe.at(1).RHS.insert(first_set_universe.at(1).RHS.end(), first_set_universe.at(1).LHS);
+
+    /* Apply Rule 2 */
+    vector<string> termMinusEps = get_set_without_epsilon(terminals);
+    for (int i = 2; i < termMinusEps.size() + 2; i++)
+    {
+        first_set_universe.at(i).RHS.insert(first_set_universe.at(i).RHS.end(), first_set_universe.at(i).LHS);
+    }
+
+    bool changed = false;
+    do
+    {
+        changed = false;
+        for (int i = 0; i < rules.size(); i++)
+        {
+            int indexLHS = get_index(&universe, rules.at(i).LHS);
+
+            /* Apply Rule 5 */
+            if (ruleSet.at(i).RHS.at(0).compare("#") == 0 && add_epsilon(&first_set_universe.at(indexLHS).RHS))
+            {
+                changed = true;
+            }
+
+            for (int j = 0; j < ruleSet.at(i).RHS.size(); j++)
+            {
+                int indexRHS = get_index(&universe, rules.at(i).RHS.at(0));
+
+                /* Apply Rule 3 */
+                if (combine_sets(&first_set_universe.at(indexLHS).RHS, &first_set_universe.at(indexRHS).RHS))
+                {
+                    changed = true;
+                }
+
+                bool foundEpsilon = false;
+                for (int k = 0; k < ruleSet.at(i).RHS.size(); k++)
+                {
+                    indexRHS = get_index(&universe, rules.at(i).RHS.at(k));
+
+
+                    if (is_epsilon_in(&first_set_universe.at(indexRHS).RHS))
+                    {
+                        /* Apply Rule 4 */
+                        if (k < ruleSet.at(i).RHS.size() - 1)
+                        {
+                            indexRHS = get_index(&universe, rules.at(i).RHS.at(k + 1));
+                            if (combine_sets(&first_set_universe.at(indexLHS).RHS, &first_set_universe.at(indexRHS).RHS))
+                            {
+                                changed = true;
+                            }
+                        }
+
+                        else
+                        {
+                            foundEpsilon = true;
+                        }
+                    }
+
+                    else
+                    {
+                        break;
+                    }
+                }
+
+                /* Apply Rule 5 */
+                if (foundEpsilon && add_epsilon(&first_set_universe.at(indexLHS).RHS))
+                {
+                    changed = true;
+                }
+            }
+        }
+    } while (changed);
+
+    for (int i = 0; i < first_set_universe.size(); i++)
+    {
+        if (str_is_in_set(&nonterminals, first_set_universe.at(i).LHS))
+        {
+            first_set_nonterminals.insert(first_set_nonterminals.end(), first_set_universe.at(i));
+        }
+    }
+
+    return first_set_nonterminals;
+}
+
+// Returns the follow set of a Context-Free Grammar
+vector<rule> Project2::get_follow_set(vector<rule> rules, vector<rule> first_set)
+{
+    
+}
+//-----------------------------------------------------------------------------------------------------------------------
+
+// Task 0 - Ariel Gutierrez
 void Project2::ReadGrammar()
 {
     parse_grammar();
@@ -448,28 +610,9 @@ void Project2::ReadGrammar()
 void Project2::printTerminalsAndNoneTerminals()
 {
     vector<string> nonterminals = get_nonterminals(ruleSet);
-    vector<string> terminals = get_terminals(ruleSet, nonterminals);
-    vector<string> inOrder;
-    for (int i = 0; i < ruleSet.size(); i++) {
-        if (str_is_in_set(&nonterminals, ruleSet.at(i).LHS) && !str_is_in_set(&inOrder, ruleSet.at(i).LHS)) {
-            inOrder.insert(inOrder.end(), ruleSet.at(i).LHS);
-        }
-        
-        for (int j = 0; j < ruleSet.at(i).RHS.size(); j++) {
-            if (str_is_in_set(&nonterminals, ruleSet.at(i).RHS.at(j)) && !str_is_in_set(&inOrder, ruleSet.at(i).RHS.at(j))) {
-                inOrder.insert(inOrder.end(), ruleSet.at(i).RHS.at(j));
-            }
-        }
-    }
-
-    vector<string> termMinusEps;
-    for (int i = 0; i < terminals.size(); i++)
-    {
-        if (terminals.at(i).compare("#") != 0)
-        {
-            termMinusEps.insert(termMinusEps.end(), terminals.at(i));
-        }
-    }
+    vector<string> terminals    = get_terminals(ruleSet, nonterminals);
+    vector<string> inOrder      = get_nonterminal_order(ruleSet, nonterminals);
+    vector<string> termMinusEps = get_set_without_epsilon(terminals);
 
     print_set(&termMinusEps);
     print_set(&inOrder);
@@ -479,32 +622,36 @@ void Project2::printTerminalsAndNoneTerminals()
 // Task 2 - Ariel Gutierrez
 void Project2::RemoveUselessSymbols()
 {
-    bool* rulesGenerate = check_if_generate(ruleSet);
+    bool* rulesGenerate = check_if_generate(ruleSet); // Checks which rules generate
 
-    vector<rule> generatingRules;
-    vector<rule> usefulRules;
+    vector<rule> generatingRules; // Contains only the rules that generate
+    vector<rule> usefulRules;     // Contains only the rules that are useful (Generate and are Reachable)
 
+    /* Add all rules that generate to another vector of rules */
     for (int i = 0; i < ruleSet.size(); i++)
     {
         if (rulesGenerate[i])
         {
             generatingRules.insert(generatingRules.end(), ruleSet.at(i));
-            
         }
     }
     
-    bool* rulesReachable = check_if_reachable(generatingRules);
-
-    for (int i = 0; i < generatingRules.size(); i++)
+    /* If the first symbol does not generate then none of the rules are useful */
+    if(!generatingRules.empty() && generatingRules.at(0).LHS.compare(ruleSet.at(0).LHS) == 0)
     {
-        if (rulesReachable[i])
+        bool* rulesReachable = check_if_reachable(generatingRules); // Checks which rules are reachable
+
+        /* Add all rules that are reachable to another vector of rules */
+        for (int i = 0; i < generatingRules.size(); i++)
         {
-            usefulRules.insert(usefulRules.end(), generatingRules.at(i));
+            if (rulesReachable[i])
+            {
+                usefulRules.insert(usefulRules.end(), generatingRules.at(i));
+            }
         }
     }
 
-    if (!usefulRules.empty() && usefulRules.at(0).LHS.compare(ruleSet.at(0).LHS) != 0) usefulRules.clear();
-
+    /* Print the useful rules */
     for (int i = 0; i < usefulRules.size(); i++)
     {
         rule Rule = usefulRules.at(i);
@@ -517,10 +664,32 @@ void Project2::RemoveUselessSymbols()
     //cout << "2\n";
 }
 
-// Task 3
+// Task 3 - Ariel Gutierrez & Salvador Gomez
 void Project2::CalculateFirstSets()
 {
-    cout << "3\n";
+    vector<string> nonterminals = get_nonterminals(ruleSet);
+    vector<string> terminals    = get_terminals(ruleSet, nonterminals);
+    vector<rule>   first_set    = get_first_set(ruleSet, nonterminals, terminals);
+
+    vector<string> order = get_set_without_epsilon(terminals);
+    order.insert(order.begin(), "#");
+
+    vector<string> inOrder = get_nonterminal_order(ruleSet, nonterminals);
+
+    for (int i = 0; i < inOrder.size(); i++)
+    {
+        for (int j = 0; j < first_set.size(); j++)
+        {
+            if (inOrder.at(i).compare(first_set.at(j).LHS) == 0)
+            {
+                cout << "FIRST(" << first_set.at(j).LHS << ") = { ";
+                print_set_in_order(&first_set.at(j).RHS, &order);
+                cout << " }\n";
+            }
+        }
+    }
+
+    //cout << "3\n";
 }
 
 // Task 4

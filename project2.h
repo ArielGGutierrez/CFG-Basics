@@ -35,6 +35,7 @@ class Project2
 		bool is_epsilon_in(vector<string>* set);
 		bool add_epsilon(vector<string>* set);
 		void print_set(vector<string>* set);
+		void print_set_in_order(vector<string>* set, vector<string>* order);
 
 		void syntax_error();
 		void expect(TokenType token);
@@ -48,6 +49,11 @@ class Project2
 		vector<string> get_nonterminals(vector<rule> rules);
 		vector<string> get_terminals(vector<rule> rules, vector<string> nonterminals);
 		vector<string> get_universe(vector<string> nonterminals, vector<string> terminals);
+		vector<string> get_set_without_epsilon(vector<string> set);
+		vector<string> get_nonterminal_order(vector<rule> rules, vector<string> nonterminals);
+		
+		vector<rule> get_first_set(vector<rule> rules, vector<string> nonterminals, vector<string> terminals);
+		vector<rule> get_follow_set(vector<rule> rules, vector<rule> first_set);
 
 		bool* check_if_generate(vector<rule> rules);
 		bool* check_if_reachable(vector<rule> rulesGen);
