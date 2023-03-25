@@ -2,6 +2,9 @@
  * Copyright (C) Mohsen Zohrevandi, 2017
  *               Rida Bazzi 2019
  * Do not share this file with anyone
+ * 
+ * Ariel Gutierrez 1218982505
+ * Salvador Gomez 1218885590
  */
 #include <iostream>
 #include <cstdio>
@@ -41,6 +44,20 @@ bool Project2::str_is_in_set(vector<string>* srcSet, string str)
     }
 
     return false;
+}
+
+// Checks if two sets are disjointed (No elements in common)
+bool Project2::check_disjoint(vector<string>* set1, vector<string>* set2)
+{
+    for (int i = 0; i < set2->size(); i++)
+    {
+        if (str_is_in_set(set1, set2->at(i)))
+        {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 // Adds elements of a source set to a destination set and returns true if this resulted in a change
@@ -324,11 +341,11 @@ vector<string> Project2::get_universe(vector<string> terminals, vector<string> n
 vector<string> Project2::get_set_without_epsilon(vector<string> set)
 {
     vector<string> termMinusEps;
-    for (int i = 0; i < terminals.size(); i++)
+    for (int i = 0; i < set.size(); i++)
     {
-        if (terminals.at(i).compare("#") != 0)
+        if (set.at(i).compare("#") != 0)
         {
-            termMinusEps.insert(termMinusEps.end(), terminals.at(i));
+            termMinusEps.insert(termMinusEps.end(), set.at(i));
         }
     }
     return termMinusEps;
@@ -450,25 +467,31 @@ bool* Project2::check_if_reachable(vector<rule> rulesGen)
     }
     
     // Check if Nonterminal can be reached
-    for (int i = 0; i < rulesGen.size(); i++)
+    bool changed = false;
+    do
     {
-        string lhs = rulesGen.at(i).LHS;
-        int indexLHS = get_index(&nonterminals, lhs);
-
-        if (symbolReach[indexLHS])
+        changed = false;
+        for (int i = 0; i < rulesGen.size(); i++)
         {
-            for (int j = 0; j < rulesGen.at(i).RHS.size(); j++)
-            {
-                string rhs = rulesGen.at(i).RHS.at(j);
-                int indexRHS = get_index(&nonterminals, rhs);
+            string lhs = rulesGen.at(i).LHS;
+            int indexLHS = get_index(&nonterminals, lhs);
 
-                if (indexRHS > 0)
+            if (symbolReach[indexLHS])
+            {
+                for (int j = 0; j < rulesGen.at(i).RHS.size(); j++)
                 {
-                    symbolReach[indexRHS] = true;
+                    string rhs = rulesGen.at(i).RHS.at(j);
+                    int indexRHS = get_index(&nonterminals, rhs);
+
+                    if (indexRHS >= 0 && !symbolReach[indexRHS])
+                    {
+                        symbolReach[indexRHS] = true;
+                        changed = true;
+                    }
                 }
             }
         }
-    }
+    } while (changed);
 
     // Check if rules can be reached
     for (int i = 0; i < rulesGen.size(); i++)
@@ -584,9 +607,125 @@ vector<rule> Project2::get_first_set(vector<rule> rules, vector<string> nontermi
 }
 
 // Returns the follow set of a Context-Free Grammar
-vector<rule> Project2::get_follow_set(vector<rule> rules, vector<rule> first_set)
+vector<rule> Project2::get_follow_set(vector<rule> rules, vector<rule> first_set, vector<string> nonterminals)
 {
-    
+    vector<rule> follow_set;
+
+    rule tempRule;
+    for (int i = 0; i < nonterminals.size(); i++)
+    {
+        tempRule.LHS = nonterminals.at(i);
+        follow_set.insert(follow_set.end(), tempRule);
+    }
+
+    follow_set.at(0).RHS.insert(follow_set.at(0).RHS.end(), "$");
+
+    bool changed = false;
+    do
+    {
+        changed = false;
+        for (int i = 0; i < rules.size(); i++)
+        {
+            int indexLHS = get_index(&nonterminals, ruleSet.at(i).LHS);
+
+            /* Loop Through RHS Reverse */
+            for (int j = ruleSet.at(i).RHS.size() - 1; j >= 0; j--)
+            {
+                string currRHS = ruleSet.at(i).RHS.at(j);
+                int indexRHS = get_index(&nonterminals, currRHS);
+                if (str_is_in_set(&nonterminals, currRHS) && combine_sets(&follow_set.at(indexRHS).RHS, &follow_set.at(indexLHS).RHS))
+                {
+                    changed = true;
+                    //cout << "Ligma\n";
+                }
+
+                if ((str_is_in_set(&nonterminals, currRHS) && !is_epsilon_in(&first_set.at(indexRHS).RHS)) || (!str_is_in_set(&nonterminals, currRHS) && currRHS.compare("#") != 0))
+                {
+                    break;
+                }
+            }
+
+            /* Loop Through RHS Forward */
+            for (int j = 0; j < ruleSet.at(i).RHS.size(); j++)
+            {
+                string currRHS = ruleSet.at(i).RHS.at(j);
+                int indexRHS = get_index(&nonterminals, currRHS);
+                if (!str_is_in_set(&nonterminals, currRHS))
+                {
+                    continue;
+                }
+
+                for (int k = j + 1; k < ruleSet.at(i).RHS.size(); k++)
+                {
+                    string nextRHS = ruleSet.at(i).RHS.at(k);
+                    int indexNextRHS = get_index(&nonterminals, nextRHS);
+                    if(str_is_in_set(&nonterminals, nextRHS))
+                    {
+                        if (combine_sets(&follow_set.at(indexRHS).RHS, &first_set.at(indexNextRHS).RHS))
+                        {
+                            changed = true;
+                            //cout << "Balls\n";
+                        }
+
+                        if (!is_epsilon_in(&first_set.at(indexNextRHS).RHS))
+                        {
+                            break;
+                        }
+                    }
+
+                    else if (!str_is_in_set(&follow_set.at(indexRHS).RHS, nextRHS))
+                    {
+                        follow_set.at(indexRHS).RHS.insert(follow_set.at(indexRHS).RHS.end(), nextRHS);
+                        changed = true;
+                        //cout << ruleSet.at(i).LHS << " " << follow_set.at(indexRHS).LHS << " " << nextRHS << " Lmao\n";
+                        break;
+                    }
+
+                    else
+                    {
+                        break;
+                    }
+                    
+                }
+            }
+        }
+    } while (changed);
+
+    return follow_set;
+}
+
+// Gets first set of elements in the RHS of a rule
+vector<string> Project2::get_RHS_first_set(vector<rule> firstSet, rule Rule, vector<string> nonterminals)
+{
+    vector<string> RHSFirstSet;
+    for (int i = 0; i < Rule.RHS.size(); i++)
+    {
+        // Nonterminals
+        if (str_is_in_set(&nonterminals, Rule.RHS.at(i)))
+        {
+            int index = get_index(&nonterminals, Rule.RHS.at(i));
+            combine_sets(&RHSFirstSet, &firstSet.at(index).RHS);
+
+            if (!is_epsilon_in(&firstSet.at(index).RHS))
+            {
+                break;
+            }
+
+            else if (is_epsilon_in(&firstSet.at(index).RHS) && i + 1 == Rule.RHS.size())
+            {
+                add_epsilon(&RHSFirstSet);
+            }
+        }
+
+        // Epsilon and terminals
+        else 
+        {
+            if (!str_is_in_set(&RHSFirstSet, Rule.RHS.at(i))) RHSFirstSet.insert(RHSFirstSet.end(), Rule.RHS.at(i));
+            break;
+        }
+    }
+
+    return RHSFirstSet;
 }
 //-----------------------------------------------------------------------------------------------------------------------
 
@@ -692,16 +831,122 @@ void Project2::CalculateFirstSets()
     //cout << "3\n";
 }
 
-// Task 4
+// Task 4 - Ariel Gutierrez & Salvador Gomez
 void Project2::CalculateFollowSets()
 {
-    cout << "4\n";
+    vector<string> nonterminals = get_nonterminals(ruleSet);
+    vector<string> terminals    = get_terminals(ruleSet, nonterminals);
+    vector<rule>   first_set    = get_first_set(ruleSet, nonterminals, terminals);
+    vector<rule>   follow_set   = get_follow_set(ruleSet, first_set, nonterminals);
+
+    vector<string> order = get_set_without_epsilon(terminals);
+    order.insert(order.begin(), "$");
+
+    vector<string> inOrder = get_nonterminal_order(ruleSet, nonterminals);
+
+    for (int i = 0; i < inOrder.size(); i++)
+    {
+        for (int j = 0; j < follow_set.size(); j++)
+        {
+            if (inOrder.at(i).compare(follow_set.at(j).LHS) == 0)
+            {
+                cout << "FOLLOW(" << follow_set.at(j).LHS << ") = { ";
+                print_set_in_order(&follow_set.at(j).RHS, &order);
+                cout << " }\n";
+            }
+        }
+    }
+
+    //cout << "4\n";
 }
 
-// Task 5
+// Task 5 - Ariel Gutierrez
 void Project2::CheckIfGrammarHasPredictiveParser()
 {
-    cout << "5\n";
+    bool* rulesGenerate = check_if_generate(ruleSet); // Checks which rules generate
+
+    vector<rule> generatingRules; // Contains only the rules that generate
+    vector<rule> usefulRules;     // Contains only the rules that are useful (Generate and are Reachable)
+
+    /* Add all rules that generate to another vector of rules */
+    for (int i = 0; i < ruleSet.size(); i++)
+    {
+        if (rulesGenerate[i])
+        {
+            generatingRules.insert(generatingRules.end(), ruleSet.at(i));
+        }
+    }
+
+    // If useless rules are present, return NO
+    if (generatingRules.size() != ruleSet.size())
+    {
+        cout << "NO\n";
+        return;
+    }
+
+    // Check that all rules are reachable
+    else
+    {
+        /* If the first symbol does not generate then none of the rules are useful */
+        if(!generatingRules.empty() && generatingRules.at(0).LHS.compare(ruleSet.at(0).LHS) == 0)
+        {
+            bool* rulesReachable = check_if_reachable(generatingRules); // Checks which rules are reachable
+
+            /* Add all rules that are reachable to another vector of rules */
+            for (int i = 0; i < generatingRules.size(); i++)
+            {
+                if (rulesReachable[i])
+                {
+                    usefulRules.insert(usefulRules.end(), generatingRules.at(i));
+                }
+            }
+
+            // If useless rules are present, return NO
+            if (usefulRules.size() != ruleSet.size())
+            {
+                cout << "NO\n";
+                return;
+            }
+        }
+    }
+    
+    vector<string> nonterminals = get_nonterminals(ruleSet);
+    vector<string> terminals    = get_terminals(ruleSet, nonterminals);
+
+    vector<rule> firstSet  = get_first_set(ruleSet, nonterminals, terminals);
+    vector<rule> followSet = get_follow_set(ruleSet, firstSet, nonterminals);
+
+    // Iterate through the rules
+    for (int i = 0; i < ruleSet.size(); i++)
+    {
+        int indexLHS = get_index(&nonterminals, ruleSet.at(i).LHS);
+
+        // If a rule generates epsilon, first and follow sets should be disjointed
+        if ((ruleSet.at(i).RHS.at(0).compare("#") == 0 || is_epsilon_in(&firstSet.at(indexLHS).RHS)) && !check_disjoint(&firstSet.at(indexLHS).RHS, &followSet.at(indexLHS).RHS))
+        {
+            cout << "NO\n";
+            return;
+        }
+
+        vector<string> RHSFirstSet = get_RHS_first_set(firstSet, ruleSet.at(i), nonterminals);
+
+        // For any two rules with the same lhs, their first sets must be disjointed
+        for (int j = i + 1; j < ruleSet.size(); j++)
+        {
+            if (ruleSet.at(i).LHS.compare(ruleSet.at(j).LHS) == 0)
+            {
+                vector<string> RHSFirstSet2 = get_RHS_first_set(firstSet, ruleSet.at(j), nonterminals);
+
+                if (!check_disjoint(&RHSFirstSet, &RHSFirstSet2))
+                {
+                    cout << "NO\n";
+                    return;
+                }
+            }
+        }
+    }
+
+    cout << "YES\n";
 }
     
 int main (int argc, char* argv[])

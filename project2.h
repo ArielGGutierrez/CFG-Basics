@@ -31,9 +31,11 @@ class Project2
 
 		int  get_index(vector<string>* universe, string str);
 		bool str_is_in_set(vector<string>* srcSet, string str);
+		bool check_disjoint(vector<string>* set1, vector<string>* set2);
 		bool combine_sets(vector<string>* dstSet, vector<string>* srcSet);
 		bool is_epsilon_in(vector<string>* set);
 		bool add_epsilon(vector<string>* set);
+
 		void print_set(vector<string>* set);
 		void print_set_in_order(vector<string>* set, vector<string>* order);
 
@@ -51,9 +53,10 @@ class Project2
 		vector<string> get_universe(vector<string> nonterminals, vector<string> terminals);
 		vector<string> get_set_without_epsilon(vector<string> set);
 		vector<string> get_nonterminal_order(vector<rule> rules, vector<string> nonterminals);
+		vector<string> get_RHS_first_set(vector<rule> firstSet, rule Rule, vector<string> nonterminals);
 		
 		vector<rule> get_first_set(vector<rule> rules, vector<string> nonterminals, vector<string> terminals);
-		vector<rule> get_follow_set(vector<rule> rules, vector<rule> first_set);
+		vector<rule> get_follow_set(vector<rule> rules, vector<rule> first_set, vector<string> nonterminals);
 
 		bool* check_if_generate(vector<rule> rules);
 		bool* check_if_reachable(vector<rule> rulesGen);
